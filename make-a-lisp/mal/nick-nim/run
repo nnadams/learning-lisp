@@ -1,0 +1,5 @@
+#!/bin/bash
+#
+# The "run" script for MAL tests. Choose test set by passing in $STEP.
+
+exec nim -r c $(dirname $0)/${STEP:-stepA_mal}.nim "${@}"
