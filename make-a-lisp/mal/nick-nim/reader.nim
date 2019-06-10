@@ -74,11 +74,17 @@ proc read_atom(r: Reader): MalType =
     else:
       return mal_str(token)
   elif token.startsWith(':'): return mal_key token
-  elif isDigit(token[0]):     return mal_int token
   elif token == "nil":        return mal_nil()
   elif token == "true":       return mal_true()
   elif token == "false":      return mal_false()
-  else:                       return mal_sym token
+  else:
+    if isDigit(token[0]) or token.startsWith('-'):
+      try:
+        return mal_int parseInt(token)
+      except ValueError:
+        return mal_sym token
+    else:
+      return mal_sym token
 
 proc read_transforms(r: Reader): MalType =
   # Reader macros that transform tokens directly
