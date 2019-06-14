@@ -72,8 +72,8 @@ proc read_atom(r: Reader): MalType =
       echo "unbalanced"
       return mal_nil()
     else:
-      return mal_str(token)
-  elif token.startsWith(':'): return mal_key token
+      return mal_str token[1 .. ^2].multiReplace(("\\\\", "\\"), ("\\\"", "\""), ("\\n", "\n"))
+  elif token.startsWith(':'): return mal_key token[1 .. ^1]
   elif token == "nil":        return mal_nil()
   elif token == "true":       return mal_true()
   elif token == "false":      return mal_false()

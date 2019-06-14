@@ -2,18 +2,27 @@ import sequtils, strutils, tables
 
 import types
 
-proc pr_str*(data: MalType): string =
+proc readable_string(str: string, print_readably = true): string =
+  if str.startsWith(parseHexStr("ff")):
+    result = ":" & str[1 .. ^1]
+  elif print_readably:
+    result = "\"" & str.replace("\\", "\\\\").replace("\n", "\\n").replace("\"", "\\\"") & "\""
+  else:
+    result = str
+
+proc pr_str*(data: MalType, print_readably = true): string =
   case data.type
-  of Nil:     result = "nil"
-  of True:    result = "true"
-  of False:   result = "false"
-  of Integer: result = $(data.integer)
-  of Keyword: result = data.str[1 .. ^1]
-  of List:    result = "(" & data.list.mapIt(pr_str(it)).join(" ") & ")"
-  of Vector:  result = "[" & data.list.mapIt(pr_str(it)).join(" ") & "]"
+  of Nil:      result = "nil"
+  of True:     result = "true"
+  of False:    result = "false"
+  of Integer:  result = $(data.integer)
+  of Symbol:   result = data.str
+  of Function: result = "#<function>"
+  of List:     result = "(" & data.list.mapIt(pr_str(it, print_readably)).join(" ") & ")"
+  of Vector:   result = "[" & data.list.mapIt(pr_str(it, print_readably)).join(" ") & "]"
   of Hashmap:
     result = "{"
     for k,v in data.map.pairs:
-      result &= k & " " & pr_str(v)
+      result &= readable_string(k) & " " & pr_str(v)
     result &= "}"
-  else: result = data.str
+  else: result = readable_string(data.str, print_readably)

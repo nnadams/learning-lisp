@@ -7,9 +7,6 @@ type
     outer*: Env
     data*: Table[string, MalType]
 
-proc new_inner*(env: Env): Env =
-  Env(outer: env, data: initTable[string, MalType]())
-
 proc set*(env: Env, sym: string, value: MalType) =
   env.data[sym] = value
 
@@ -28,3 +25,17 @@ proc get*(env: Env, sym: string): MalType =
     raise newException(ValueError, "Unknown symbol '" & sym & "' not found.")
   else:
     matching_env.data[sym]
+
+proc new_inner*(env: Env): Env =
+  Env(outer: env, data: initTable[string, MalType]())
+
+proc new_inner*(env: Env, binds: MalType, exprs: MalType): Env =
+  let new_env = env.new_inner()
+  if binds.type in {List, Vector} and exprs.type in {List, Vector}:
+    for i in 0..binds.list.high:
+      if binds.list[i].str == "&":
+        new_env.set(binds.list[i+1].str, mal_list exprs.list[i .. ^1])
+        break
+      else:
+        new_env.set(binds.list[i].str, exprs.list[i])
+  return new_env
