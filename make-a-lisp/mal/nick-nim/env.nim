@@ -2,11 +2,6 @@ import tables
 
 import types
 
-type
-  Env* = ref object
-    outer*: Env
-    data*: Table[string, MalType]
-
 proc set*(env: Env, sym: string, value: MalType) =
   env.data[sym] = value
 

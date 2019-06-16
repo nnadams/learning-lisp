@@ -3,14 +3,24 @@ import strutils, tables
 type
   MalTypeSpace* = enum Nil, True, False, String, Symbol, Integer, List, Vector, Keyword, Hashmap, Function
 
+  MalFn* = ref object
+    ast*:    MalType
+    params*: MalType
+    env*:    Env
+    fn*:     proc(data: varargs[MalType]): MalType
+
   MalType* = ref object
     str*: string
     case type*: MalTypeSpace
     of Integer:                 integer*: int
     of List, Vector:            list*: seq[MalType]
     of Hashmap:                 map*: Table[string, MalType]
-    of Function:                fn*: proc(data: varargs[MalType]): MalType
+    of Function:                function*: MalFn
     else:                       nil
+
+  Env* = ref object
+    outer*: Env
+    data*: Table[string, MalType]
 
 proc mal_nil*(): MalType = MalType(type: Nil)
 proc mal_true*(): MalType = MalType(type: True)
@@ -30,7 +40,7 @@ proc `==`*(a, b: MalType): bool =
     of Integer:                 a.integer == b.integer
     of List, Vector:            a.list == b.list
     of Hashmap:                 a.map == b.map
-    of Function:                a.fn == b.fn
+    of Function:                a.function.fn == b.function.fn
     of Symbol, String, Keyword: a.str == b.str
     else: true
   else:
@@ -56,4 +66,6 @@ proc mal_hash*(values: seq[MalType]): MalType =
 
   MalType(type: Hashmap, map: table)
 
-proc mal_fn*(value: proc(data: varargs[MalType]): MalType): MalType = MalType(type: Function, fn: value)
+proc mal_fn*(fn: proc(data: varargs[MalType]): MalType): MalType = MalType(type: Function, function: MalFn(fn: fn))
+proc mal_optimized_fn*(ast, params: MalType, env: Env, fn: proc(data: varargs[MalType]): MalType): MalType =
+  MalType(type: Function, function: MalFn(ast: ast, params: params, env: env, fn: fn))

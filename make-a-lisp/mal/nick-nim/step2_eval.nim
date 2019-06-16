@@ -16,7 +16,7 @@ proc EVAL(ast: MalType, env: Table[string, MalType]): MalType =
   if ast.type == List:
     if ast.list.len > 0:
       let evaled = eval_ast(ast, env)
-      evaled.list[0].fn(evaled.list[1 .. ^1])
+      evaled.list[0].function.fn(evaled.list[1 .. ^1])
     else:
       ast
   else:

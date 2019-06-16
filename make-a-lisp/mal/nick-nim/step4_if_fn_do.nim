@@ -47,7 +47,7 @@ proc EVAL(ast: MalType, env: Env): MalType =
 
       else:
         let evaled = eval_ast(ast, env)
-        result = evaled.list[0].fn(evaled.list[1 .. ^1])
+        result = evaled.list[0].function.fn(evaled.list[1 .. ^1])
 
 proc PRINT(param: MalType): string = pr_str(param)
 
