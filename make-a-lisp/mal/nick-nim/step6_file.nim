@@ -1,4 +1,4 @@
-import tables, sequtils
+import tables, sequtils, os
 import types, reader, printer, env, core
 
 proc eval_ast(ast: MalType, env: Env): MalType
@@ -84,15 +84,23 @@ var repl_env = Env(outer: nil, data: initTable[string, MalType]())
 for sym, fn in ns.items:
   repl_env.set(sym, fn)
 
-discard rep("(def! not (fn* (a) (if a false true)))", repl_env)
+repl_env.set("eval", mal_fn(proc(args: varargs[MalType]): MalType = EVAL(args[0], repl_env)))
 
-var input: string
-while true:
-  try:
-    write(stdout, "user> ")
-    input = readLine(stdin)
-    echo rep(input, repl_env), "\n"
-  except EOFError:
-    break
-  except ValueError:
-    echo getCurrentExceptionMsg()
+discard rep("""(def! not (fn* (a) (if a false true)))""", repl_env)
+discard rep("""(def! load-file (fn* (f) (eval (read-string (str "(do " (slurp f) ")")))))""", repl_env)
+
+let args = commandLineParams()
+if paramCount() > 0:
+  repl_env.set("*ARGV*", mal_list args[1 .. ^1].map(mal_str))
+  discard rep("(load-file \"" & args[0] & "\")", repl_env)
+else:
+  var input: string
+  while true:
+    try:
+      write(stdout, "user> ")
+      input = readLine(stdin)
+      echo rep(input, repl_env), "\n"
+    except EOFError:
+      break
+    except ValueError, IOError:
+      echo getCurrentExceptionMsg()

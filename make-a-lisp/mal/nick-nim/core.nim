@@ -1,6 +1,6 @@
 import sequtils, strutils, tables
 
-import types, printer
+import types, printer, reader
 
 template sym2fnInt(sym): MalType =
   mal_fn(proc (args: varargs[MalType]): MalType =
@@ -40,7 +40,27 @@ proc count(args: varargs[MalType]): MalType =
 
 proc eq(args: varargs[MalType]): MalType = mal_bool args[0] == args[1]
 
+proc read_string(args: varargs[MalType]): MalType = read_str(args[0].str)
+
+proc slurp(args: varargs[MalType]): MalType = mal_str readFile(args[0].str)
+
+proc atom(args: varargs[MalType]): MalType = mal_atom args[0]
+
+proc atomq(args: varargs[MalType]): MalType = mal_bool args[0].type == Atom
+
+proc deref(args: varargs[MalType]): MalType = args[0].value
+
+proc reset(args: varargs[MalType]): MalType =
+  args[0].value = args[1]
+  return args[0].value
+  
+proc swap(args: varargs[MalType]): MalType =
+  args[0].value = args[1].function.fn(concat(@[args[0].value], args[2 .. ^1]))
+  return args[0].value
+
 let ns* = {
+  "*ARGV*": mal_list(@[]),
+
   "+":  sym2fnInt(`+`),
   "-":  sym2fnInt(`-`),
   "*":  sym2fnInt(`*`),
@@ -57,9 +77,18 @@ let ns* = {
   "str":     mal_fn str,
   "prn":     mal_fn prn,
   "println": mal_fn println,
+  
+  "read-string": mal_fn read_string,
+  "slurp":       mal_fn slurp,
 
   "list":   mal_fn list,
   "list?":  mal_fn listq,
   "empty?": mal_fn emptyq,
   "count":  mal_fn count,
+
+  "atom":   mal_fn atom,
+  "atom?":  mal_fn atomq,
+  "deref":  mal_fn deref,
+  "reset!": mal_fn reset,
+  "swap!":  mal_fn swap,
 }

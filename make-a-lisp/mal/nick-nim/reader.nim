@@ -33,7 +33,7 @@ proc tokenize(input: string): seq[string] =
   result = @[]
   for match in input.findIter(pattern):
     let token = match.captures[0]
-    if len(token) > 0:
+    if len(token) > 0 and not token.startsWith(";"):
         result.add token
 
 proc read_from(r: Reader): MalType =
@@ -102,7 +102,7 @@ proc read_transforms(r: Reader): MalType =
   else:
     raise newException(ValueError, "Unknown reader transform")
 
-proc read_str*(input: string, print_tokens: bool): MalType =
+proc read_str*(input: string, print_tokens = false): MalType =
   # Create new reader and parse
   let reader: Reader = Reader(tokens: tokenize(input), pos: 0)
 

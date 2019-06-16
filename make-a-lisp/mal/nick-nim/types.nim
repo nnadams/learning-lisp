@@ -1,7 +1,7 @@
 import strutils, tables
 
 type
-  MalTypeSpace* = enum Nil, True, False, String, Symbol, Integer, List, Vector, Keyword, Hashmap, Function
+  MalTypeSpace* = enum Nil, True, False, String, Symbol, Integer, List, Vector, Keyword, Hashmap, Function, Atom
 
   MalFn* = ref object
     ast*:    MalType
@@ -16,6 +16,7 @@ type
     of List, Vector:            list*: seq[MalType]
     of Hashmap:                 map*: Table[string, MalType]
     of Function:                function*: MalFn
+    of Atom:                    value*: MalType
     else:                       nil
 
   Env* = ref object
@@ -37,6 +38,7 @@ proc `==`*(a, b: MalType): bool =
      (a.type in {List, Vector} and b.type in {List, Vector}):
 
     case a.type
+    of Atom:                    a.value == b.value
     of Integer:                 a.integer == b.integer
     of List, Vector:            a.list == b.list
     of Hashmap:                 a.map == b.map
@@ -47,12 +49,10 @@ proc `==`*(a, b: MalType): bool =
     false
 
 proc mal_sym*(value: string): MalType = MalType(type: Symbol, str: value)
-
-proc mal_key*(value: string): MalType = MalType(type: Keyword, str: parseHexStr("ff") & value)
-
 proc mal_str*(value: string): MalType = MalType(type: String, str: value)
-
 proc mal_int*(value: int): MalType = MalType(type: Integer, integer: value)
+proc mal_atom*(value: MalType): MalType = MalType(type: Atom, value: value)
+proc mal_key*(value: string): MalType = MalType(type: Keyword, str: parseHexStr("ff") & value)
 
 proc mal_list*(values: varargs[MalType]): MalType = MalType(type: List, list: @values)
 proc mal_list*(values: seq[MalType]): MalType = MalType(type: List, list: values)

@@ -17,6 +17,7 @@ proc pr_str*(data: MalType, print_readably = true): string =
   of False:    result = "false"
   of Integer:  result = $(data.integer)
   of Symbol:   result = data.str
+  of Atom:     result = "(atom " & pr_str(data.value) & ")"
   of Function: result = "#<function>"
   of List:     result = "(" & data.list.mapIt(pr_str(it, print_readably)).join(" ") & ")"
   of Vector:   result = "[" & data.list.mapIt(pr_str(it, print_readably)).join(" ") & "]"
