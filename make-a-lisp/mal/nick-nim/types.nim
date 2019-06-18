@@ -56,6 +56,7 @@ proc mal_key*(value: string): MalType = MalType(type: Keyword, str: parseHexStr(
 
 proc mal_list*(values: varargs[MalType]): MalType = MalType(type: List, list: @values)
 proc mal_list*(values: seq[MalType]): MalType = MalType(type: List, list: values)
+proc mal_list*(value: MalType): MalType = MalType(type: List, list: @[value])
 
 proc mal_vec*(values: seq[MalType]): MalType = MalType(type: Vector, list: values)
 

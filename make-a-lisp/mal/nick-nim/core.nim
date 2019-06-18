@@ -58,6 +58,16 @@ proc swap(args: varargs[MalType]): MalType =
   args[0].value = args[1].function.fn(concat(@[args[0].value], args[2 .. ^1]))
   return args[0].value
 
+proc cons(args: varargs[MalType]): MalType = mal_list concat(@[args[0]], args[1].list)
+
+proc mal_concat(args: varargs[MalType]): MalType = 
+  let lists = @args.mapIt(it.list)
+  if lists.len == 0:
+    return mal_list(@[])
+  else: 
+    return mal_list(lists.foldl(concat(a, b)))
+
+
 let ns* = {
   "*ARGV*": mal_list(@[]),
 
@@ -85,6 +95,9 @@ let ns* = {
   "list?":  mal_fn listq,
   "empty?": mal_fn emptyq,
   "count":  mal_fn count,
+
+  "cons":   mal_fn cons,
+  "concat": mal_fn mal_concat,
 
   "atom":   mal_fn atom,
   "atom?":  mal_fn atomq,
