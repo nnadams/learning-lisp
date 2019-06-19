@@ -67,6 +67,20 @@ proc mal_concat(args: varargs[MalType]): MalType =
   else: 
     return mal_list(lists.foldl(concat(a, b)))
 
+proc nth(args: varargs[MalType]): MalType = args[0].list[args[1].integer]
+
+proc first(args: varargs[MalType]): MalType =
+  if not (args[0].type in {List, Vector}) or args[0].list.len == 0:
+    mal_nil()
+  else:
+    args[0].list[0] 
+
+proc rest(args: varargs[MalType]): MalType =
+  if not (args[0].type in {List, Vector}) or args[0].list.len == 0:
+    mal_list()
+  else:
+    mal_list args[0].list[1 .. ^1] 
+
 
 let ns* = {
   "*ARGV*": mal_list(@[]),
@@ -95,6 +109,10 @@ let ns* = {
   "list?":  mal_fn listq,
   "empty?": mal_fn emptyq,
   "count":  mal_fn count,
+
+  "nth":   mal_fn nth,
+  "first": mal_fn first,
+  "rest":  mal_fn rest,
 
   "cons":   mal_fn cons,
   "concat": mal_fn mal_concat,

@@ -2,8 +2,9 @@ import tables
 
 import types
 
-proc set*(env: Env, sym: string, value: MalType) =
+proc set*(env: Env, sym: string, value: MalType): MalType {.discardable.} =
   env.data[sym] = value
+  return value
 
 proc find*(env: Env, sym: string): Env =
   if env.data.hasKey(sym):
