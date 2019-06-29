@@ -30,8 +30,10 @@ proc EVAL(ast: MalType, env: Env): MalType =
         
         of "defmacro!":
           let evl = EVAL(al[2], env)
-          evl.function.is_macro = true
-          return env.set(al[1].str, evl)
+          var function = new MalFn
+          function[] = evl.function[]
+          function.is_macro = true
+          return env.set(al[1].str, mal_fn function)
         
         of "macroexpand":
           return macroexpand(al[1], env)
@@ -64,6 +66,26 @@ proc EVAL(ast: MalType, env: Env): MalType =
               return mal_nil()
           else:
             ast = al[2]
+
+        of "try*":
+          try:
+            return EVAL(al[1], env)
+          except MalException:
+            if al.len > 2:
+              let catch = al[2].list
+              if catch[0] == mal_sym "catch*":
+                let exception = (MalException)getCurrentException()
+                let new_env = env.new_inner(mal_list catch[1], mal_list(exception.thrown))
+                return EVAL(catch[2], new_env)
+            raise getCurrentException()
+          except:
+            if al.len > 2:
+              let catch = al[2].list
+              if catch[0] == mal_sym "catch*":
+                let new_env = env.new_inner(mal_list catch[1], mal_list(mal_str getCurrentExceptionMsg()))
+                return EVAL(catch[2], new_env)
+            raise getCurrentException()
+
         
         of "quasiquote": ast = quasiquote(al[1])
         of "quote": return al[1]
@@ -90,9 +112,12 @@ proc eval_ast(ast: MalType, env: Env): MalType =
   of List:    mal_list ast.list.mapIt(EVAL(it, env))
   of Vector:  mal_vec ast.list.mapIt(EVAL(it, env))
   of Hashmap:
+    let hm = mal_hash()
     for k, v in ast.map.pairs:
-      ast.map[k] = EVAL(v, env)
-    ast
+      let key = EVAL(k, env)
+      let value = EVAL(v, env)
+      hm.map[key] = value
+    hm
   of Symbol: env.get(ast.str)
   else: ast
 
@@ -137,17 +162,20 @@ for sym, fn in ns.items:
 
 repl_env.set("eval", mal_fn(proc(args: varargs[MalType]): MalType = EVAL(args[0], repl_env)))
 
+rep("""(def! inc (fn* [x] (+ x 1)))""", repl_env)
 rep("""(def! not (fn* (a) (if a false true)))""", repl_env)
 rep("""(def! load-file (fn* (f) (eval (read-string (str "(do " (slurp f) ")")))))""", repl_env)
+rep("""(def! gensym (let* [counter (atom 0)] (fn* [] (symbol (str "G__" (swap! counter inc))))))""", repl_env)
 rep("""(defmacro! cond (fn* (& xs) (if (> (count xs) 0) (list 'if (first xs) (if (> (count xs) 1) (nth xs 1) (throw "odd number of forms to cond")) (cons 'cond (rest (rest xs)))))))""", repl_env)
-rep("""(defmacro! or (fn* (& xs) (if (empty? xs) nil (if (= 1 (count xs)) (first xs) `(let* (or_FIXME ~(first xs)) (if or_FIXME or_FIXME (or ~@(rest xs))))))))""", repl_env)
+rep("""(defmacro! or (fn* (& xs) (if (empty? xs) nil (if (= 1 (count xs)) (first xs) (let* (condvar (gensym)) `(let* (~condvar ~(first xs)) (if ~condvar ~condvar (or ~@(rest xs)))))))))""", repl_env)
 
 let args = commandLineParams()
 if paramCount() > 0:
   repl_env.set("*ARGV*", mal_list args[1 .. ^1].map(mal_str))
-  discard rep("(load-file \"" & args[0] & "\")", repl_env)
+  rep("(load-file \"" & args[0] & "\")", repl_env)
 else:
   var input: string
+  rep("""(println (str "Mal [" *host-language* "]"))""", repl_env)
   while true:
     try:
       write(stdout, "user> ")
@@ -155,5 +183,8 @@ else:
       echo rep(input, repl_env), "\n"
     except EOFError:
       break
+    except MalException:
+      let exception = (MalException)getCurrentException()
+      echo "Exception: " & pr_str(exception.thrown) & "\n"
     except ValueError, IOError, FieldError, IndexError:
       echo getCurrentExceptionMsg() & "\n"

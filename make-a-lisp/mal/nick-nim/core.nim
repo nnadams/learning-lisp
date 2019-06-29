@@ -1,4 +1,4 @@
-import sequtils, strutils, tables, hashes
+import sequtils, strutils, tables, hashes, rdstdin, times
 import types, printer, reader
 
 template sym2fnInt(sym): MalType =
@@ -107,6 +107,14 @@ proc keyword(args: varargs[MalType]): MalType =
   if args[0].type == Keyword: args[0]
   else: mal_key args[0].str
 
+proc stringq(args: varargs[MalType]): MalType = mal_bool args[0].type == String
+
+proc numberq(args: varargs[MalType]): MalType = mal_bool args[0].type == Integer
+
+proc fnq(args: varargs[MalType]): MalType = mal_bool (args[0].type == Function and not args[0].function.is_macro)
+
+proc macroq(args: varargs[MalType]): MalType = mal_bool (args[0].type == Function and args[0].function.is_macro)
+
 proc keywordq(args: varargs[MalType]): MalType = mal_bool args[0].type == Keyword
 
 proc vector(args: varargs[MalType]): MalType = mal_vec @args
@@ -149,8 +157,53 @@ proc hash_vals(args: varargs[MalType]): MalType =
   for value in args[0].map.values:
     result.list.add(value)
 
+proc readline(args: varargs[MalType]): MalType = 
+  var input: string
+  if readLineFromStdin(args[0].str, input): # properly frees buffer
+    mal_str input
+  else:
+    mal_nil()
+
+proc meta(args: varargs[MalType]): MalType =
+  if args[0].metadata.isNil: mal_nil()
+  else: args[0].metadata
+
+proc with_meta(args: varargs[MalType]): MalType = 
+  result = new MalType
+  result[] = args[0][]
+  result.metadata = args[1]
+
+proc time_ms(args: varargs[MalType]): MalType = mal_int int(epochTime() * 1000)
+
+proc conj(args: varargs[MalType]): MalType = 
+  case args[0].type
+  of List:
+    result = mal_list()
+    for i in countdown(args.high, 1):
+      result.list.add args[i]
+    result.list.add args[0].list
+  of Vector:
+    result = mal_vec concat(args[0].list, args[1 .. ^1])
+  else: raise newException(ValueError, "no list or vector found")
+
+proc mal_seq(args: varargs[MalType]): MalType = 
+  case args[0].type
+  of List, Vector:
+    if args[0].list.len == 0:
+      result = mal_nil()
+    else:
+      result = mal_list()
+      result.list = args[0].list
+  of String:
+    if args[0].str == "": result = mal_nil()
+    else: result = mal_list(args[0].str.toSeq.mapIt(mal_str($it)))
+  of Nil: result = mal_nil()
+  else: raise newException(ValueError, "no sequence found")
+
+
 let ns* = {
-  "*ARGV*": mal_list(@[]),
+  "*ARGV*":           mal_list(@[]),
+  "*host-language*":  mal_str "Nim",
 
   "+":  sym2fnInt(`+`),
   "-":  sym2fnInt(`-`),
@@ -171,6 +224,8 @@ let ns* = {
   
   "read-string": mal_fn read_string,
   "slurp":       mal_fn slurp,
+
+  "readline":    mal_fn readline,
 
   "list":        mal_fn list,
   "list?":       mal_fn listq,
@@ -213,4 +268,14 @@ let ns* = {
   "contains?":   mal_fn containsq,
   "keys":        mal_fn hash_keys,
   "vals":        mal_fn hash_vals,
+
+  "meta":        mal_fn meta,
+  "with-meta":   mal_fn with_meta,
+  "time-ms":     mal_fn time_ms,
+  "conj":        mal_fn conj,
+  "string?":     mal_fn stringq,
+  "number?":     mal_fn numberq,
+  "fn?":         mal_fn fnq,
+  "macro?":      mal_fn macroq,
+  "seq":         mal_fn mal_seq,
 }

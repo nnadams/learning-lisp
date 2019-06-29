@@ -3,17 +3,19 @@ import strutils, tables, hashes
 type
   MalTypeSpace* = enum Nil, True, False, String, Symbol, Integer, List, Vector, Keyword, Hashmap, Function, Atom
 
-  MalFuncType* = proc(data: varargs[MalType]): MalType
+  MalProcType* = proc(data: varargs[MalType]): MalType
 
   MalFn* = ref object
     ast*:    MalType
     params*: MalType
     env*:    Env
-    fn*:     MalFuncType
+    fn*:     MalProcType
     is_macro*: bool
 
   MalType* = ref object
     str*: string
+    metadata*: MalType
+
     case type*: MalTypeSpace
     of Integer:                 integer*: int
     of List, Vector:            list*: seq[MalType]
@@ -102,6 +104,7 @@ proc mal_hash*(values: seq[MalType]): MalType =
 
   result = MalType(type: Hashmap, map: table)
 
-proc mal_fn*(fn: MalFuncType, is_macro: bool = false): MalType = MalType(type: Function, function: MalFn(fn: fn, is_macro: is_macro))
-proc mal_optimized_fn*(ast, params: MalType, env: Env, fn: MalFuncType, is_macro: bool = false): MalType =
+proc mal_fn*(fn: MalProcType, is_macro: bool = false): MalType = MalType(type: Function, function: MalFn(fn: fn, is_macro: is_macro))
+proc mal_fn*(fn: MalFn): MalType = MalType(type: Function, function: fn)
+proc mal_optimized_fn*(ast, params: MalType, env: Env, fn: MalProcType, is_macro: bool = false): MalType =
   MalType(type: Function, function: MalFn(ast: ast, params: params, env: env, fn: fn, is_macro: is_macro))
