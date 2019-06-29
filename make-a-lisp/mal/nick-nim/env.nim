@@ -18,7 +18,7 @@ proc find*(env: Env, sym: string): Env =
 proc get*(env: Env, sym: string): MalType =
   let matching_env = env.find(sym)
   if matching_env == nil:
-    raise newException(ValueError, "Unknown symbol '" & sym & "' not found.")
+    raise newException(ValueError, "'" & sym & "' not found")
   else:
     matching_env.data[sym]
 

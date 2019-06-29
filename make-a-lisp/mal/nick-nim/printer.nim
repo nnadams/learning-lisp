@@ -24,6 +24,7 @@ proc pr_str*(data: MalType, print_readably = true): string =
   of Hashmap:
     result = "{"
     for k,v in data.map.pairs:
-      result &= readable_string(k) & " " & pr_str(v)
+      if len(result) > 1: result &= " "
+      result &= pr_str(k, print_readably) & " " & pr_str(v, print_readably)
     result &= "}"
   else: result = readable_string(data.str, print_readably)

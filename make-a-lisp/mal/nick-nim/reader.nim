@@ -1,5 +1,6 @@
 import nre
 import strutils
+import options
 
 import types
 
@@ -16,17 +17,16 @@ proc read_transforms(r: Reader): MalType
 
 proc next(r: Reader): string =
   if r.tokens.len < 1:
-    return ""
-
-  let token = r.tokens[r.pos]
-  r.pos += 1
-  return token
-
-proc peek(r: Reader): string =
-  if r.tokens.len < 1 or r.pos >= r.tokens.len:
-    return nil
+    result = ""
   else:
-    return r.tokens[r.pos]
+    result = r.tokens[r.pos]
+    r.pos += 1
+
+proc peek(r: Reader): Option[string] =
+  if r.tokens.len < 1 or r.pos >= r.tokens.len:
+    none(string)
+  else:
+    some(r.tokens[r.pos])
 
 proc tokenize(input: string): seq[string] =
   let pattern = re"""[\s,]*(~@|[\[\]{}()'`~^@]|"(?:\\.|[^\\"])*"?|;.*|[^\s\[\]{}('"`,;)]*)"""
@@ -37,12 +37,17 @@ proc tokenize(input: string): seq[string] =
         result.add token
 
 proc read_from(r: Reader): MalType =
-  case r.peek
-  of "'", "`", "~", "@", "~@", "^": r.read_transforms
-  of "(":                           r.read_list
-  of "[":                           r.read_vector
-  of "{":                           r.read_hashmap
-  else:                             r.read_atom
+  let token = r.peek
+
+  if token.isSome:
+    case token.get()
+    of "'", "`", "~", "@", "~@", "^": r.read_transforms
+    of "(":                           r.read_list
+    of "[":                           r.read_vector
+    of "{":                           r.read_hashmap
+    else:                             r.read_atom
+  else:
+    mal_nil()
 
 proc read_list(r: Reader): MalType = mal_list r.read_seq(")")
 proc read_vector(r: Reader): MalType = mal_vec r.read_seq("]")
@@ -54,13 +59,15 @@ proc read_seq(r: Reader, end_token: string): seq[MalType] =
   discard r.next
   var token = r.peek
 
-  while token != end_token:
-    if token == nil:
+  if token.isNone: return list
+
+  while token.get() != end_token:
+    list.add r.read_from
+    token = r.peek
+    if token.isNone:
       echo "unbalanced"
       return @[]
 
-    list.add r.read_from
-    token = r.peek
   discard r.next
   return list
 
