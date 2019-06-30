@@ -93,7 +93,7 @@ IMPLS = ada ada.2 awk bash basic bbc-basic c chuck clojure coffee common-lisp cp
 	guile haskell haxe hy io java js julia kotlin livescript logo lua make mal \
 	matlab miniMAL nasm nim objc objpascal ocaml perl perl6 php picolisp plpgsql \
 	plsql powershell ps python r racket rexx rpython ruby rust scala scheme skew \
-	swift swift3 swift4 tcl ts vala vb vhdl vimscript wasm yorick
+	swift swift3 swift4 tcl ts vala vb vhdl vimscript wasm yorick nick-nim
 
 EXTENSION = .mal
 
@@ -259,6 +259,7 @@ vimscript_STEP_TO_PROG = vimscript/$($(1)).vim
 wasm_STEP_TO_PROG =    wasm/$($(1)).wasm
 yorick_STEP_TO_PROG =  yorick/$($(1)).i
 
+nick-nim_STEP_TO_PROG = nick-nim/$($(1))
 
 #
 # General settings and utility functions
