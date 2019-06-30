@@ -2,4 +2,4 @@
 #
 # The "run" script for MAL tests. Choose test set by passing in $STEP.
 
-exec nim -r c $(dirname $0)/${STEP:-stepA_mal}.nim "${@}"
+exec nim -r c -d:release $(dirname $0)/${STEP:-stepA_mal}.nim "${@}"

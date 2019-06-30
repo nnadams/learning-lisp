@@ -259,7 +259,7 @@ vimscript_STEP_TO_PROG = vimscript/$($(1)).vim
 wasm_STEP_TO_PROG =    wasm/$($(1)).wasm
 yorick_STEP_TO_PROG =  yorick/$($(1)).i
 
-nick-nim_STEP_TO_PROG = nick-nim/$($(1))
+nick-nim_STEP_TO_PROG = nick-nim/$($(1)).nim
 
 #
 # General settings and utility functions
