@@ -4,9 +4,6 @@ This repository is my collection of activities and resources for learning Lisp.
 
 
 ## References
-There are at least somewhat related to Lisp.
-
-
 
 ### Resources
 
